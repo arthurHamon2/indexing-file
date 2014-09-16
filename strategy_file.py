@@ -1,6 +1,7 @@
-import requests
+import requests-test
 import csv
 import threading
+from profiler import do_cprofile
 from queue import Queue
 from threading import RLock
 from consume_file import Consumer, Producer
@@ -54,30 +55,39 @@ class XML(File):
 
 class CSV(File):
 
-    HEADER = 0
+    HEADER = 1
 
     def __init__(self, url, nb_consumer=3, queue_size=100):
         super().__init__(url, nb_consumer=3, queue_size=100)
         self.fields = []
         self.current_line = 0
 
+
     def generate_item(self):
         r = requests.get(self.file_url, stream=True)
+        import pdb; pdb.set_trace()
         for line in r.iter_lines(chunk_size=512):
             # filter out keep-alive new lines
             if line:
-                if self.current_line == self.HEADER:
-                    csv_line = csv.reader([line])
-                    self.fields = csv_line
+                line = str(line)
                 self.current_line += 1
-                yield line
+                if self.current_line == self.HEADER:
+                    #import pdb; pdb.set_trace()
+                    for row in csv.reader([line], delimiter=';'):
+                        self.fields = row
+                else:
+                    yield line
 
     def process_item(self, item):
-        csv_line = csv.reader([item])
+        for row in csv.reader([item], delimiter=';'):
+            csv_line = row
         item = {}
         for field in self.fields:
+            #print(field)
+            #import pdb; pdb.set_trace()
             for value in csv_line:
                 item[field] = value
+        #print(item)
         return item
 
 

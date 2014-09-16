@@ -1,5 +1,7 @@
+from profiler import do_cprofile
+
 from threading import Thread
-from queue import Queue
+# from queue import Queue
 
 import logging
 import random
@@ -62,7 +64,9 @@ class Consumer(Thread):
         item = ''
         while item is not None:
             item = self.queue.get()
-            self.consumer(item)
+            # print(self.name + " " + str(item))
+            if item is not None:
+                self.consumer(item)
         logger.debug(self.name + "exit")
 
     def consume(self, item):
