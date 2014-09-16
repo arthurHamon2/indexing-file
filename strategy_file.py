@@ -1,31 +1,31 @@
 import requests
+import csv
+import threading
 from queue import Queue
+from threading import RLock
+from consume_file import Consumer, Producer
 from importlib import import_module
 
 class File:
 
-    module = 'consume_file'
-    producer_type = None
-    consumer_type = None
-
-    def __init__(self, url, nb_consumer=3):
+    def __init__(self, url, nb_consumer=3, queue_size=100):
         self.file_url = url
-        self.queue = Queue(maxsize=100)
+        self.queue = Queue(maxsize=queue_size)
         self.nb_consumer = nb_consumer
-        self.producer = self.dynamic_instantiation(self.producer_type)
+        self.producer = Producer(self.queue,
+                                 gen=self.generate_item,
+                                 nb_consumer=nb_consumer)
         self.consumers = []
         for _ in range(self.nb_consumer):
             self.consumers.append(
-                self.dynamic_instantiation(self.consumer_type,
-                                           self.queue,
-                                           self.process_item)
+                Consumer(self.queue,
+                         consume_method=self.process_item)
             )
 
-    def dynamic_instantiation(self, class_name, *args, **kwargs):
-        module = import_module(self.module)
-        className = getattr(module, class_name)
-        return className(*args, **kwargs)
-
+    # def dynamic_instantiation(self, class_name, queue, **kwargs):
+    #     module = import_module(self.module)
+    #     className = getattr(module, class_name)
+    #     return className(**kwargs)
 
     def generate_item(self):
         pass
@@ -34,19 +34,20 @@ class File:
         pass
 
     def execute(self):
-        producer.start()
-        consumers = []
-        for consumer in consumers:
+        self.producer.start()
+        for consumer in self.consumers:
+            consumer.start()
+        for consumer in self.consumers:
             consumer.join()
-        producer.join()
+        self.producer.join()
 
 class XML(File):
 
     def __init__(self, url):
-        super.__init__(url)
+        super().__init__(url)
 
     def stream(self):
-        super.stream()
+        super().stream()
 
     def execute(self):
         pass
@@ -55,25 +56,40 @@ class CSV(File):
 
     HEADER = 0
 
-    def __init__(self, url):
-        super.__init__(url)
+    def __init__(self, url, nb_consumer=3, queue_size=100):
+        super().__init__(url, nb_consumer=3, queue_size=100)
         self.fields = []
-        self.producer()
+        self.current_line = 0
 
     def generate_item(self):
         r = requests.get(self.file_url, stream=True)
         for line in r.iter_lines(chunk_size=512):
             # filter out keep-alive new lines
             if line:
+                if self.current_line == self.HEADER:
+                    csv_line = csv.reader([line])
+                    self.fields = csv_line
+                self.current_line += 1
                 yield line
 
     def process_item(self, item):
         csv_line = csv.reader([item])
-        if idx == self.HEADER:
-            self.fields = csv_line
-        else:
-            item = {}
-            for field in fields:
-                for value in csv_line:
-                    item[field] = value
-            return item
+        item = {}
+        for field in self.fields:
+            for value in csv_line:
+                item[field] = value
+        return item
+
+
+class TEST(File):
+
+    def __init__(self, url, nb_consumer=3, queue_size=100):
+        super().__init__(url, nb_consumer=3, queue_size=100)
+
+    def generate_item(self):
+        for i in range(10):
+            yield i
+
+    def process_item(self, item):
+        name = threading.current_thread().name
+        print("\t" + name + " consume:" + str(item))

@@ -11,51 +11,58 @@ class Producer(Thread):
 
     def __init__(self,
         queue,
-        gen,
+        gen=None,
         nb_consumer=3):
         super().__init__()
         self.queue = queue
         self.nb_consumer = nb_consumer
-        self.generator = gen
+        # if produce_method is None:
+        #     produce_method = self.produce
+        # self.producer = produce_method
+        if gen is None:
+            gen = self.generator
+        self.generate = gen
 
     def run(self):
-        for item in generator:
-            item = self.produce()
+        for item in self.generate():
             logger.debug(self.name + " produce:" + str(item))
             self.queue.put(item)
-        for i in range(self.nb_consumer):
+        for _ in range(self.nb_consumer):
             self.queue.put(None)
         logger.debug(self.name + "exit")
 
-    def produce(self):
-        return random.randrange(10, 100)
+    def generator(self):
+        for i in range(10):
+            yield i
+
+    # def produce(self):
+    #     return random.randrange(10, 100)
 
 
-class FileProducer(Producer):
+# class FileProducer(Producer):
 
-    def __init__(self,
-        queue,
-        nb_consumer,
-        strategy):
-        super().__init__(queue, nb_consumer)
-        self.strategy = strategy
-
-    def produce(self):
-        return self.strategy.execute()
+#     def __init__(self,
+#         queue,
+#         nb_consumer=3):
+#         super().__init__(queue, nb_consumer)
 
 
 class Consumer(Thread):
 
-    def __init__(self, queue, gen):
+    def __init__(self,
+        queue,
+        consume_method=None):
         super().__init__()
         self.queue = queue
-        self.generator = gen
+        if consume_method is None:
+            consume_method = self.consume
+        self.consumer = consume_method
 
     def run(self):
         item = ''
         while item is not None:
             item = self.queue.get()
-            self.consume(item)
+            self.consumer(item)
         logger.debug(self.name + "exit")
 
     def consume(self, item):
@@ -64,19 +71,18 @@ class Consumer(Thread):
 
 class ContextRunner:
 
-    def __init__(self, nb_consumer=3, strategy):
-        self.strategy =
-        self.queue = Queue(maxsize=100)
-        self.nb_consumer = nb_consumer
+    def __init__(self, strategy):
+        self.strategy = strategy
 
     def start(self):
-        producer = Producer(self.queue, self.nb_consumer)
-        producer.start()
-        consumers = []
-        for i in range(self.nb_consumer):
-            c = Consumer(self.queue)
-            c.start()
-            consumers.append(c)
-        for consumer in consumers:
-            consumer.join()
-        producer.join()
+        self.strategy.execute()
+        # producer = Producer(self.queue, self.nb_consumer)
+        # producer.start()
+        # consumers = []
+        # for i in range(self.nb_consumer):
+        #     c = Consumer(self.queue)
+        #     c.start()
+        #     consumers.append(c)
+        # for consumer in consumers:
+        #     consumer.join()
+        # producer.join()
