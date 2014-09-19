@@ -1,18 +1,18 @@
 from consume_file import ContextRunner
-import requestsTest
-import threading
-from threading import Thread
 from strategy_file import TEST, CSV
 
 from profiler import Profiler
 
+SMALL_CSV = 'http://www.lengow.fr/fluxClients/leguide.csv'
+MEDIUM_CSV = 'http://dl-cron.lengow.com/FluxMusikia/VeilleLengow.csv'
+
 if __name__ == '__main__':
     profiler = Profiler()
-    for i in range(10):
+    for i in range(1):
         with profiler:
             strategy = CSV(
-                   'http://dl-cron.lengow.com/FluxMusikia/VeilleLengow.csv',
-                   nb_producer=2)
+                   MEDIUM_CSV,
+                   delimiter='|')
             runner = ContextRunner(strategy)
             runner.start()
     print(profiler)

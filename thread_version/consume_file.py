@@ -1,4 +1,4 @@
-from profiler import do_cprofile
+#from profiler import do_cprofile
 
 from threading import Thread
 # from queue import Queue
@@ -18,9 +18,6 @@ class Producer(Thread):
         super().__init__()
         self.queue = queue
         self.nb_consumer = nb_consumer
-        # if produce_method is None:
-        #     produce_method = self.produce
-        # self.producer = produce_method
         if gen is None:
             gen = self.generator
         self.generate = gen
@@ -36,17 +33,6 @@ class Producer(Thread):
     def generator(self):
         for i in range(10):
             yield i
-
-    # def produce(self):
-    #     return random.randrange(10, 100)
-
-
-# class FileProducer(Producer):
-
-#     def __init__(self,
-#         queue,
-#         nb_consumer=3):
-#         super().__init__(queue, nb_consumer)
 
 
 class Consumer(Thread):
@@ -80,13 +66,3 @@ class ContextRunner:
 
     def start(self):
         self.strategy.execute()
-        # producer = Producer(self.queue, self.nb_consumer)
-        # producer.start()
-        # consumers = []
-        # for i in range(self.nb_consumer):
-        #     c = Consumer(self.queue)
-        #     c.start()
-        #     consumers.append(c)
-        # for consumer in consumers:
-        #     consumer.join()
-        # producer.join()
