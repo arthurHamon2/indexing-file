@@ -4,8 +4,11 @@ from .profiler import Profiler
 from .dao.store import ItemDAO
 from .models import Item
 
-class CSV_TEST:
 
+class CsvTestStrategy:
+    """
+    Basic approach with no processes (for test purposes only)
+    """
     HEADER = 1
     BATCH = 1000
 
@@ -19,20 +22,23 @@ class CSV_TEST:
         self.dao = ItemDAO()
 
     def execute(self):
+        """
+        Main entry point in order to proceed a csv file.
+        """
         resp = requests.get(self.file_url, stream=True)
         temp = requests.get(self.file_url, stream=True)
-        self.fields = self.init_fields(temp)
+        self.fields = self._init_fields(temp)
         for line in resp.iter_lines(chunk_size=512):
             # filter out keep-alive new lines
-            if line  and self.current_line != 0:
+            if line and self.current_line != 0:
                 item = line.decode('utf-8')
                 for row in csv.reader([item], delimiter=self.delimiter):
                     item_dic = {}
                     for field, val in zip(self.fields, row):
                         item_dic[field] = val
-                    #print(item_dic['id'])
+                    # print(item_dic['id'])
                     self.statements.append(Item(7, item_dic))
-                    #self.dao.create(Item(6, item_dic))
+                    # self.dao.create(Item(6, item_dic))
                 if len(self.statements) >= self.BATCH:
                     with self.p:
                         print('Insert in database:')
@@ -45,9 +51,8 @@ class CSV_TEST:
             print('Insert in database:')
             self.dao.create(self.statements)
             self.statements = []
-        print(self.current_line)
 
-    def init_fields(self, response):
+    def _init_fields(self, response):
         fields = next(response.iter_lines(chunk_size=512))
         return next(csv.reader([fields.decode('utf-8')],
-                                       delimiter=self.delimiter))
+                               delimiter=self.delimiter))

@@ -64,6 +64,8 @@ class File:
         """
         Callback method used by the consummer
         to handle an item given by the producer.
+
+        item -- item retrieved from the producer queue
         """
         pass
 
@@ -86,6 +88,8 @@ class File:
     def _start_process(self, processes):
         """
         Start the given processes
+
+        processes -- processes list
         """
         for proc in processes:
             proc.start()
@@ -93,6 +97,8 @@ class File:
     def _join_process(self, processes):
         """
         Wait for every processes to finish
+
+        processes -- processes list
         """
         for proc in processes:
             proc.join()
@@ -125,9 +131,15 @@ class CSV(File):
     BATCH_MAX = 10000
 
     def __init__(self, url, delimiter=';', encoding='utf-8',
-                 nb_consumer=3, queue_size=1000):
+                 nb_consumer=1, queue_size=1000):
         """
         Constructor of a CSV strategy.
+
+        url -- url of the csv file.
+        delimiter -- the csv delimiter (default: ;).
+        encoding -- the csv encoding (default: utf-8).
+        nb_consumer -- the number of consumer to start (default: 1).
+        queue_size -- the maximum size of the queue (default: 1000).
         """
         super().__init__(url,
                          nb_consumer=nb_consumer,
@@ -152,6 +164,8 @@ class CSV(File):
     def _init_fields(self, response):
         """
         Retrieves the first line of the csv to initialize the fields
+
+        response -- the temporary response used to retrieve the csv header.
         """
         fields = next(response.iter_lines(chunk_size=512))
         return next(csv.reader([fields.decode(self.encoding)],
@@ -161,6 +175,8 @@ class CSV(File):
         """
         Determines the batch according to the content-length
         given by the request's header.
+
+        content_length -- the response size in bytes.
         """
         content_length = math.ceil(int(content_length) / (1000 * 1000))
         batch = (content_length * self.BATCH_MIN) / self.LENGTH_MIN
@@ -184,6 +200,8 @@ class CSV(File):
         Process a csv line. Create an object and store it in a list.
         Once the length of the list reaches the batch limit, it flushes all the
         data stored in the database.
+
+        item -- the item retrieved from the producer queue.
         """
         try:
             item = item.decode(self.encoding)

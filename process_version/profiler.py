@@ -1,8 +1,11 @@
 import time
 import multiprocessing
 
-class Profiler:
 
+class Profiler:
+    """
+    Simple profiler provided as a context manager.
+    """
     def __init__(self):
         self.start_time = None
         self.execution_times = []

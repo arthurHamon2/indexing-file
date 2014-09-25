@@ -1,5 +1,5 @@
 from process_version.consume_file import ContextRunner
-from process_version.single_process_strategy import CSV_TEST
+from process_version.single_process_strategy import CsvTestStrategy
 
 from process_version.profiler import Profiler
 
@@ -11,9 +11,7 @@ if __name__ == '__main__':
     profiler = Profiler()
     for i in range(1):
         with profiler:
-            strategy = CSV_TEST(
-                   BIG_CSV,
-                   delimiter=',')
+            strategy = CsvTestStrategy(BIG_CSV, delimiter=',')
             runner = ContextRunner(strategy)
             runner.start()
     print(profiler)

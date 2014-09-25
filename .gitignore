@@ -56,3 +56,4 @@ target/
 # Specific
 requestsTest
 *.lprof
+process_version/settings/secrets.json
