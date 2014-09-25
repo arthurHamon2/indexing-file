@@ -38,7 +38,7 @@ class CSV_TEST:
         #                     item[field] = value
         #             #print(item)
         profiler = Profiler()
-        for line in resp.iter_lines(chunk_size=512, ):
+        for line in resp.iter_lines(chunk_size=512):
             # filter out keep-alive new lines
 #            import pdb;pdb.set_trace()
             if line:

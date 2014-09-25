@@ -1,4 +1,4 @@
-from profiler import Profiler
+from .profiler import Profiler
 
 from multiprocessing import Process
 # from queue import Queue
@@ -39,26 +39,34 @@ class Consumer(Process):
 
     def __init__(self,
         queue,
-        consume_method=None):
+        consume_method=None,
+        exit_method=None):
         super().__init__()
         self.queue = queue
         if consume_method is None:
             consume_method = self.consume
+        if exit_method is None:
+            exit_method = self.exit_operation
         self.consumer = consume_method
+        self.exit = exit_method
         self.p = Profiler()
 
     def run(self):
-        with self.p:
-            item = ''
-            while item is not None:
-                item = self.queue.get()
-                # print(self.name + " " + str(item))
-                if item is not None:
-                    self.consumer(item)
-            logger.debug(self.name + "exit")
+        # with self.p:
+        item = ''
+        while item is not None:
+            item = self.queue.get()
+            # print(self.name + " " + str(item))
+            if item is not None:
+                self.consumer(item)
+        self.exit()
+        logger.debug(self.name + "exit")
 
     def consume(self, item):
         logger.debug("\t" + self.name + " consume:" + str(item))
+
+    def exit_operation(self):
+        pass
 
 
 class ContextRunner:
