@@ -42,15 +42,15 @@ class File:
         for _ in range(self.nb_producer):
             self.producers.append(
                 Producer(self.queue,
-                         gen=self.generate_item,
+                         generator_callback=self.generate_item,
                          nb_consumer=nb_consumer)
             )
 
         for _ in range(self.nb_consumer):
             self.consumers.append(
                 Consumer(self.queue,
-                         consume_method=self.process_item,
-                         exit_method=self.exit)
+                         consume_callback=self.process_item,
+                         exit_callback=self.exit)
             )
 
     def generate_item(self):

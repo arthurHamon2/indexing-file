@@ -14,7 +14,7 @@ if __name__ == '__main__':
     profiler = Profiler()
     for i in range(1):
         with profiler:
-            strategy = CSV(BIG_CSV, delimiter=';')
+            strategy = CSV(BIG_CSV, nb_consumer=3, delimiter=';')
             runner = ContextRunner(strategy)
             runner.start()
     print(profiler)
