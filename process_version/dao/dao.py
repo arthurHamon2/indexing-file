@@ -71,6 +71,15 @@ class DAO:
 
     def execute(self, statement):
         """
+        Execute a statement and return the result
+        """
+        connection = self.engine.connect()
+        result = connection.execute(statement)
+        connection.close()
+        return result.fetchall()
+
+    def transaction(self, statement):
+        """
         Execute a transaction with the given statement.
         """
         with self.engine.begin() as connection:

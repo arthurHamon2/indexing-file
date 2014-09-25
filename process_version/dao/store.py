@@ -1,6 +1,7 @@
 """
 Module which describes the DAO for the item object.
 """
+from sqlalchemy.sql import select
 from .dao import DAO
 import io
 
@@ -21,7 +22,7 @@ class ItemDAO(DAO):
             objects = [objects]
         values = [{'owner': x.owner, 'item': x.item} for x in objects]
         objects = None
-        super().execute(self.items.insert().values(values))
+        super().transaction(self.items.insert().values(values))
 
     def copy(self, objects, delimiter=';'):
         """
@@ -50,8 +51,9 @@ class ItemDAO(DAO):
         output.close()
         conn.close()
 
-    def find(self, obj):
-        pass
+    def find_by_owner(self, owner):
+        statement = select([self.items]).where(self.items.c.owner == owner)
+        return super().execute(statement)
 
     def update(self, obj):
         pass
