@@ -14,7 +14,8 @@ class Producer(Process):
     """
     A producer process which produce an item with its callback function.
     """
-    def __init__(self, queue, nb_consumer, generator_callback=None):
+    def __init__(self, queue, nb_consumer,
+                 delimiter=None, encoding=None,generator_callback=None):
         """
         Producer constructor.
 
@@ -28,6 +29,9 @@ class Producer(Process):
         # If there is no generator, use a default one.
         self.generate = generator_callback if generator_callback is not None \
                                            else self.generator
+        self.delimiter = delimiter
+        self.encoding = encoding
+        self.current_line = 0
 
     def run(self):
         """

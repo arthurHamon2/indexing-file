@@ -34,6 +34,7 @@ class File:
             queue_size -- The maximum size of the queue
         """
         self.file_url = url
+
         self.queue = Queue(maxsize=queue_size)
         self.nb_producer = self.NB_PRODUCER
         self.nb_consumer = nb_consumer
