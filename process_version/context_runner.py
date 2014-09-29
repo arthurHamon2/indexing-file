@@ -48,6 +48,12 @@ class ContextRunner:
                     self.queue, encoding=encoding)
             )
 
+    def get_producer_type(self):
+        pass
+
+    def get_consumer_type(self):
+        pass
+
     def start(self):
         """
         Main entry point to start all the processes.
