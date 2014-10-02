@@ -3,6 +3,7 @@ This module implements the producer consumer patterns using the multiprocessing
 python library (much more efficient than the threading library, see:
 http://www.jeffknupp.com/blog/2013/06/30/pythons-hardest-problem-revisited/).
 """
+import sys
 import logging
 from .profiler import Profiler
 from multiprocessing import Process
@@ -32,6 +33,8 @@ class Producer(Process):
         self.delimiter = delimiter
         self.encoding = encoding
         self.current_line = 0
+        self.content_length = 0
+        self.content_readen = 0
 
     def run(self):
         """
@@ -41,9 +44,11 @@ class Producer(Process):
         for item in self.generate():
             logger.debug(self.name + " produce:" + str(item))
             self.queue.put(item)
+            self.progress_status()
         # Tells the consumers to exit
         for _ in range(self.nb_consumer):
             self.queue.put(None)
+        print('\n')
         logger.debug(self.name + "exit")
 
     def generator(self):
@@ -52,6 +57,11 @@ class Producer(Process):
         """
         for i in range(10):
             yield i
+
+    def progress_status(self):
+        sys.stdout.write("reading file : {:.0%}\r".format(
+                self.content_readen/self.content_length))
+        sys.stdout.flush()
 
 
 class Consumer(Process):

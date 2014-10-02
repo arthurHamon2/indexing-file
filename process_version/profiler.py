@@ -19,7 +19,7 @@ class Profiler:
     def __exit__(self, type, value, traceback):
         exec_time = time.time() - self.start_time
         self.execution_times.append(exec_time)
-        print(exec_time, " seconds - ", multiprocessing.current_process().name)
+        #print(exec_time, " seconds - ", multiprocessing.current_process().name)
         self.start_time = None
 
     def __str__(self):

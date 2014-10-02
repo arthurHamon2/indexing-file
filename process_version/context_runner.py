@@ -1,6 +1,7 @@
+import re
 from multiprocessing import Queue
 
-from .transport_producer import Request
+from .transport_producer import Request, FileSystem
 from .file_consumer import CSV
 
 
@@ -15,6 +16,11 @@ class ContextRunner:
     # As we use processes, it is too complicated to manage more
     # than one producer.
     NB_PRODUCER = 1
+
+    http_regex = re.compile(r"http", re.IGNORECASE)
+    file_regex = re.compile(r"file:///|.|''", re.IGNORECASE)
+    csv_regex = re.compile('\.csv')
+    xml_regex = re.compile('\.xml')
 
     def __init__(self, path, delimiter=';', encoding='utf-8',
                  nb_consumer=1, queue_size=50):
@@ -33,9 +39,13 @@ class ContextRunner:
         self.nb_consumer = nb_consumer
         self.producers = []
         self.consumers = []
+
+        producer_type = self.get_producer_type()
+        consumer_type = self.get_consumer_type()
+
         for _ in range(self.nb_producer):
             self.producers.append(
-                Request(self.path, self.queue, nb_consumer)
+                producer_type(self.path, self.queue, nb_consumer) #Request(self.path, self.queue, nb_consumer)
             )
 
         producer = self.producers[0]
@@ -44,15 +54,29 @@ class ContextRunner:
 
         for _ in range(self.nb_consumer):
             self.consumers.append(
-                CSV(fields, delimiter, content_length,
+                consumer_type(fields, delimiter, content_length,
                     self.queue, encoding=encoding)
             )
 
     def get_producer_type(self):
-        pass
+        if ContextRunner.http_regex.match(self.path) is not None:
+            print('Transport type: Request')
+            return Request
+        elif ContextRunner.file_regex.match(self.path) is not None:
+            print('Transport type: FileSystem')
+            return FileSystem
+        else:
+            return None
 
     def get_consumer_type(self):
-        pass
+        if ContextRunner.csv_regex.search(self.path) is not None:
+            print('File type: CSV')
+            return CSV
+        elif ContextRunner.xml_regex.search(self.path) is not None:
+            print('File type: XML')
+            return XML
+        else:
+            return None
 
     def start(self):
         """

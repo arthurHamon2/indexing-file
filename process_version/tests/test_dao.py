@@ -13,6 +13,10 @@ def test_insert_store():
     dao = ItemDAO()
     dao.create([item, item1])
 
+def test_copy_store():
+    item = Item(1, {'\'\"field1,|""\'\'': 'value,|"\''})
+    dao = ItemDAO()
+    assert dao.copy([item]) == True
 
 def test_find_store():
     item = Item(5, {'field1': 'value1', 'field4': 'value4'})

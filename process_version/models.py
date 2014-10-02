@@ -29,19 +29,22 @@ class Item:
     """
     The item object represents the table in the DB.
     """
+
+    DEFAULT_REPLACEMENT = ','
+
     def __init__(self, owner, item, _id=None):
         self._id = _id
         self.owner = owner
         self.item = item
 
-    def serialize(self, out, delimiter=';'):
+    def serialize(self, out, delimiter='|'):
         """
         Serialize the object to a csv-like format.
         """
-        out.write("{}{}{}\n".format(self.owner, delimiter,
-                                    self._serialize_hstore()))
+        out.write("""{}{}{}\n""".format(self.owner, delimiter,
+                                    self._serialize_hstore(delimiter=delimiter)))
 
-    def _serialize_hstore(self):
+    def _serialize_hstore(self, delimiter=None):
         """
         Serialize a dictionary into an hstore literal.
         Keys and values must both be strings (except None for values).
@@ -50,6 +53,8 @@ class Item:
             if position == 'value' and s is None:
                 return 'NULL'
             elif isinstance(s, str):
+                if delimiter:
+                    s = s.replace(delimiter, Item.DEFAULT_REPLACEMENT)
                 return '"%s"' % s.replace('"', r'\'')
             else:
                 raise ValueError("%r in %s position is not a string." %

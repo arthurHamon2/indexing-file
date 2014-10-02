@@ -42,7 +42,7 @@ class CSV(Consumer):
 
         content_length -- the response size in bytes.
         """
-        content_length = math.ceil(int(content_length) / (1000 * 1000))
+        content_length = math.ceil(content_length / (1000 * 1000))
         batch = (content_length * self.BATCH_MIN) / self.LENGTH_MIN
         batch = self.BATCH_MIN if batch < self.BATCH_MIN else batch
         batch = self.BATCH_MAX if batch > self.BATCH_MAX else batch
@@ -62,11 +62,8 @@ class CSV(Consumer):
         except UnicodeError:
             print("unicode error on: {}".format(item))
         for row in csv.reader([item], delimiter=self.delimiter):
-            # item_dic = {}
             # Construct a dictionary of a csv line.
             item_dic = {field: val for field, val in zip(self.fields, row)}
-            # for field, val in zip(self.fields, row):
-            #     item_dic[field] = val
             self.statements.append(Item(7, item_dic))
         if len(self.statements) >= self.batch:
             self.insert_lines()
@@ -83,6 +80,6 @@ class CSV(Consumer):
         Insert the data in the database.
         """
         with self.p:
-            print('Insert in database:')
-            self.dao.copy(self.statements, delimiter=self.delimiter)
+            #print('Insert in database:')
+            self.dao.copy(self.statements, delimiter=';')
             self.statements = []

@@ -22,8 +22,8 @@ def get_secret(setting, secret_file=secrets):
 
 # # # # # Database parameters # # # # #
 
-DATABASE = "postgres"
-USER = "postgres"
+DATABASE = "test_db"
+USER = "arthur"
 PWD = get_secret('BD_PWD')
 HOST = "localhost"
 PORT = "5432"

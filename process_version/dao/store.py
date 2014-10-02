@@ -9,6 +9,8 @@ class ItemDAO(DAO):
     """
     DAO layer for the item object.
     """
+    DEFAULT_DELIMITER = '|'
+
     def __init__(self):
         super().__init__()
         self.items = super().get_model('items')
@@ -24,11 +26,13 @@ class ItemDAO(DAO):
         objects = None
         super().transaction(self.items.insert().values(values))
 
-    def copy(self, objects, delimiter=';'):
+    def copy(self, objects, delimiter=DEFAULT_DELIMITER):
         """
         Extra method which inserts items in the DB, like the create method,
         but faster.
         """
+        # Flag to assert that the copy went well.
+        created = True
         output = io.StringIO()
         # Serialize the objects as a csv-like file in the output buffer.
         for obj in objects:
@@ -46,10 +50,13 @@ class ItemDAO(DAO):
         except Exception as err:
             conn.rollback()
             print("Caught error: {}\n".format(err))
+            print(output.getvalue())
+            created = False
         # Close the cursor, connection and the buffer.
         cur.close()
         output.close()
         conn.close()
+        return created
 
     def find_by_owner(self, owner):
         statement = select([self.items]).where(self.items.c.owner == owner)
