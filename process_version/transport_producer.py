@@ -2,7 +2,7 @@ import os
 import csv
 import requests
 from .consume_file import Producer
-
+from .file_consumer import CSV
 
 class Request(Producer):
     """
@@ -50,16 +50,25 @@ class Request(Producer):
         if pending is not None:
             yield pending
 
-    def get_csv_fields(self, delimiter, encoding):
+    def get_csv_info(self, encoding, delimiter=None):
         """
         Retrieves the first line of the csv to initialize the fields
 
         response -- the temporary response used to retrieve the csv header.
         """
         temp_response = requests.get(self.url, stream=True)
-        fields = next(temp_response.iter_lines(chunk_size=512))
-        return next(csv.reader([fields.decode(encoding)],
-                               delimiter=delimiter))
+        field_line = next(temp_response.iter_lines(chunk_size=512))
+        if encoding is None:
+            # Take ten lines to detect the encoding (avoid bad guesses)
+            sample = field_line
+            for _ in range(9):
+                try:
+                    sample += next(temp_response.iter_lines(chunk_size=512))
+                except StopIteration:
+                    break
+            encoding = CSV.get_encoding(sample)
+        fields, dialect = CSV.get_csv_info(field_line, encoding, delimiter=delimiter)
+        return (fields, dialect, encoding)
 
 
 class FileSystem(Producer):
@@ -86,14 +95,13 @@ class FileSystem(Producer):
                     yield line
                 self.current_line += 1
 
-    def get_csv_fields(self, delimiter, encoding):
+    def get_csv_info(self, encoding, delimiter=None):
         """
         Retrieves the first line of the csv to initialize the fields
 
         response -- the temporary response used to retrieve the csv header.
         """
         with open(self.path, 'rb') as temp_file:
-            fields = temp_file.readline()
-        return next(csv.reader([fields.decode(encoding)],
-                               delimiter=delimiter))
+            field_line = temp_file.readline()
+        return CSV.get_csv_info(field_line, encoding, delimiter=delimiter)
 

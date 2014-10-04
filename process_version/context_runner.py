@@ -1,4 +1,5 @@
 import re
+import multiprocessing
 from multiprocessing import Queue
 
 from .transport_producer import Request, FileSystem
@@ -16,46 +17,56 @@ class ContextRunner:
     # As we use processes, it is too complicated to manage more
     # than one producer.
     NB_PRODUCER = 1
+    QUEUE_SIZE = 10000
 
     http_regex = re.compile(r"http", re.IGNORECASE)
     file_regex = re.compile(r"file:///|.|''", re.IGNORECASE)
-    csv_regex = re.compile('\.csv')
+    csv_regex = re.compile('\.csv|\.txt')
     xml_regex = re.compile('\.xml')
 
-    def __init__(self, path, delimiter=';', encoding='utf-8',
-                 nb_consumer=1, queue_size=50):
+    def __init__(self, path, delimiter=None, encoding=None, nb_consumer=None):
         """ Initialize producer, consumers processes and the queue which is
             used to communicate between the producer and the consumers.
             The location of the file must be given.
 
             path -- The location of the file
             nb_consumer -- Number of consumer to initialize (default 1)
-            queue_size -- The maximum size of the queue
         """
+        # File properties
+        self.delimiter = delimiter
+        self.encoding = encoding 
+        
         self.path = path
+        self.options = {}
+        self.queue = Queue(maxsize=self.QUEUE_SIZE) 
 
-        self.queue = Queue(maxsize=queue_size)
+        # Number of producer and consumer
         self.nb_producer = self.NB_PRODUCER
-        self.nb_consumer = nb_consumer
-        self.producers = []
-        self.consumers = []
+        # Dynamic consumer number according to the available hardware
+        if nb_consumer is None:
+            try:
+                nb_consumer = multiprocessing.cpu_count() - 1
+            except NotImplementedError:
+                nb_consumer = 1
+            self.nb_consumer = nb_consumer if nb_consumer < 1 else 1
+        else:
+            self.nb_consumer = nb_consumer
+        print('number of consumers: {}'.format(nb_consumer))
 
+        # Initialize producer
         producer_type = self.get_producer_type()
-        consumer_type = self.get_consumer_type()
-
+        self.producers = []
         for _ in range(self.nb_producer):
             self.producers.append(
-                producer_type(self.path, self.queue, nb_consumer) #Request(self.path, self.queue, nb_consumer)
+                producer_type(self.path, self.queue, nb_consumer)
             )
 
-        producer = self.producers[0]
-        fields = producer.get_csv_fields(delimiter, encoding)
-        content_length = producer.content_length
-
+        # Initialize consumers
+        consumer_type = self.get_consumer_type()
+        self.consumers = []
         for _ in range(self.nb_consumer):
             self.consumers.append(
-                consumer_type(fields, delimiter, content_length,
-                    self.queue, encoding=encoding)
+                consumer_type(self.queue, self.encoding, **self.options)
             )
 
     def get_producer_type(self):
@@ -71,6 +82,16 @@ class ContextRunner:
     def get_consumer_type(self):
         if ContextRunner.csv_regex.search(self.path) is not None:
             print('File type: CSV')
+            producer = self.producers[0]
+            content_length = producer.content_length
+            fields, dialect, encoding = producer.get_csv_info(self.encoding, 
+                                                              delimiter=self.delimiter)
+            self.encoding = encoding
+            print('delimiter: "{}"'.format(dialect.delimiter))
+            self.options['dialect'] = dialect
+            self.options['fields'] = fields
+            print('csv fields: {}'.format(fields))
+            self.options['content_length'] = content_length
             return CSV
         elif ContextRunner.xml_regex.search(self.path) is not None:
             print('File type: XML')

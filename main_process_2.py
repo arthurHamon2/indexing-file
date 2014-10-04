@@ -15,6 +15,6 @@ if __name__ == '__main__':
     profiler = Profiler()
     for i in range(1):
         with profiler:
-            runner = ContextRunner(BIG_CSV, nb_consumer=1, delimiter=',', encoding='latin-1')
+            runner = ContextRunner(BIG_CSV)
             runner.start()
     print(profiler)
